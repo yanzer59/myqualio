@@ -26,6 +26,7 @@ import DocDossierCandidature from "@/components/docs/DocDossierCandidature";
 import DocTestPositionnement from "@/components/docs/DocTestPositionnement";
 import DocDeroulePedagogique from "@/components/docs/DocDeroulePedagogique";
 import DocLivretApprentissage from "@/components/docs/DocLivretApprentissage";
+import DocDossierQualiopi from "@/components/docs/DocDossierQualiopi";
 import DocGeneric from "@/components/docs/DocGeneric";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,6 +55,7 @@ const DOC_COMPONENTS: Record<string, React.ComponentType<any>> = {
   "test-positionnement": DocTestPositionnement,
   "deroule-pedagogique": DocDeroulePedagogique,
   "livret-apprentissage": DocLivretApprentissage,
+  "dossier-qualiopi": DocDossierQualiopi,
 };
 
 export default function DocPage() {
