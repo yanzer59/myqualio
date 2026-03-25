@@ -1,5 +1,4 @@
 "use client";
-import { CAMPUS } from "@/lib/campus-data";
 import React from "react";
 
 // Styles partagés
@@ -58,24 +57,3 @@ export function Section({ title, color = "bg-primary", children }: { title: stri
   );
 }
 
-// Info pré-remplie (non éditable)
-export function InfoLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2 text-sm py-0.5">
-      <span className="font-medium text-gray-text w-44 shrink-0">{label} :</span>
-      <span className="text-dark font-medium">{value || "—"}</span>
-    </div>
-  );
-}
-
-// En-tête Campus Excellence (utilisé dans chaque document)
-export function CampusHeader() {
-  return (
-    <div className="bg-primary-light rounded-lg p-4 mb-4 text-sm">
-      <div className="font-bold text-primary">{CAMPUS.nom}</div>
-      <div className="text-gray-text">Centre de Formation en Alternance — Groupe APEN</div>
-      <div className="text-gray-text">{CAMPUS.adresse} — {CAMPUS.cp} {CAMPUS.ville}</div>
-      <div className="text-gray-text">{CAMPUS.email}</div>
-    </div>
-  );
-}

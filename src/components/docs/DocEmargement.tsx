@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props {
   data: Record<string, string>;
@@ -9,8 +9,6 @@ interface Props {
 export default function DocEmargement({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
-
       <Section title="Informations de la session">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Date de la session" field="date_session" data={data} onUpdate={onUpdate} type="date" required />

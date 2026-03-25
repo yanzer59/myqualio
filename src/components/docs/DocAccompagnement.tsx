@@ -1,5 +1,5 @@
 "use client";
-import { Section, TextArea, CampusHeader } from "./shared";
+import { Section, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
@@ -15,7 +15,6 @@ const ATELIERS = [
 export default function DocAccompagnement({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="Ateliers d'insertion professionnelle et citoyenne">
         {ATELIERS.map((a) => (
           <div key={a.id} className="flex items-start gap-3 bg-light-gray rounded-lg p-3 mb-2">

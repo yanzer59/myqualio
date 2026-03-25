@@ -1,12 +1,11 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocConseilPerfectionnement({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="1. Composition du Conseil">
         <p className="text-xs text-gray-text mb-3">Article L6231-3 du Code du travail — Obligatoire pour les CFA</p>
         {[0, 1, 2, 3, 4].map((i) => (

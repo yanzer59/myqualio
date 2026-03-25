@@ -1,12 +1,11 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocRegistreDysfonctionnements({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <div className="bg-red/5 rounded-lg p-3 text-xs text-red">
         <strong>Indicateur 31 — Critère 7</strong> : Procédure de traitement des dysfonctionnements et réclamations obligatoire.
       </div>

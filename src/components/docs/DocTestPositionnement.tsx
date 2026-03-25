@@ -1,6 +1,5 @@
 "use client";
-import { CAMPUS } from "@/lib/campus-data";
-import { Section, Field, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
@@ -18,7 +17,6 @@ const QUESTIONS = [
 export default function DocTestPositionnement({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="Identification du candidat">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nom / Prénom" field="candidat" data={data} onUpdate={onUpdate} required />

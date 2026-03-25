@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
@@ -12,7 +12,6 @@ const ORGANISMES = [
 export default function DocContactsHandicap({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <div className="bg-secondary-light rounded-lg p-3 text-xs text-secondary">
         <strong>Indicateur 26 — Critère 6</strong> : L&apos;auditeur demandera les captures d&apos;écran des emails envoyés comme preuve de contact.
       </div>

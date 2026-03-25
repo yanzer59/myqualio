@@ -1,6 +1,5 @@
 "use client";
-import { CAMPUS } from "@/lib/campus-data";
-import { Section, Field, InfoLine, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props {
   data: Record<string, string>;
@@ -10,12 +9,14 @@ interface Props {
 export default function DocAttestationFin({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
-
       <Section title="Attestation délivrée par">
-        <InfoLine label="Nom / Prénom" value={`${CAMPUS.president_prenom} ${CAMPUS.president_nom}`} />
-        <InfoLine label="Qualité" value={`${CAMPUS.president_qualite} de ${CAMPUS.nom}`} />
-        <InfoLine label="Organisme" value={`${CAMPUS.nom} — CFA APEN — ${CAMPUS.adresse}, ${CAMPUS.cp} ${CAMPUS.ville}`} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Nom / Prénom du signataire" field="signataire_nom" data={data} onUpdate={onUpdate} placeholder="Ex: Yusri BEN KHELIL" />
+          <Field label="Qualité" field="signataire_qualite" data={data} onUpdate={onUpdate} placeholder="Ex: Président de Campus Excellence" />
+          <div className="sm:col-span-2">
+            <Field label="Organisme" field="organisme" data={data} onUpdate={onUpdate} placeholder="Ex: Campus Excellence — CFA — 102 Rue de Lannoy, 59650 Villeneuve d'Ascq" />
+          </div>
+        </div>
       </Section>
 
       <Section title="Bénéficiaire de la formation" color="bg-secondary">
@@ -29,22 +30,24 @@ export default function DocAttestationFin({ data, onUpdate }: Props) {
       </Section>
 
       <Section title="Formation suivie">
-        <InfoLine label="Formation" value={CAMPUS.formation} />
-        <InfoLine label="RNCP" value={`${CAMPUS.rncp} — ${CAMPUS.niveau}`} />
-        <InfoLine label="Certificateur" value={CAMPUS.certificateur} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Formation" field="formation" data={data} onUpdate={onUpdate} placeholder="Ex: TP Agent de Médiation, Information et Services" />
+          <Field label="RNCP" field="rncp" data={data} onUpdate={onUpdate} placeholder="Ex: RNCP 37722 — Niveau 3" />
+          <Field label="Certificateur" field="certificateur" data={data} onUpdate={onUpdate} placeholder="Ex: Ministère du Travail" />
+        </div>
 
         <div className="mt-3">
           <p className="text-xs font-bold text-primary uppercase mb-2">Blocs de compétences — Statut de validation</p>
-          {CAMPUS.blocs.map((b) => (
-            <div key={b.code} className="flex items-center gap-3 bg-light-gray rounded p-3 mb-2">
-              <div className="flex-1">
-                <div className="font-bold text-primary text-xs">{b.code} — {b.heures}h</div>
-                <div className="text-xs text-dark">{b.titre}</div>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 bg-light-gray rounded p-3 mb-2">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Field label="Bloc" field={`bloc_${i}_code`} data={data} onUpdate={onUpdate} placeholder={`Ex: BC0${i + 1}`} />
+                <Field label="Intitulé" field={`bloc_${i}_titre`} data={data} onUpdate={onUpdate} placeholder="Intitulé du bloc" />
               </div>
               <select
                 className="border border-gray-300 rounded px-2 py-1 text-xs"
-                value={data[`bloc_${b.code}`] || ""}
-                onChange={(e) => onUpdate(`bloc_${b.code}`, e.target.value)}
+                value={data[`bloc_${i}_statut`] || ""}
+                onChange={(e) => onUpdate(`bloc_${i}_statut`, e.target.value)}
               >
                 <option value="">— Statut —</option>
                 <option value="Validé">Validé</option>
@@ -60,8 +63,8 @@ export default function DocAttestationFin({ data, onUpdate }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Date de début" field="date_debut" data={data} onUpdate={onUpdate} type="date" />
           <Field label="Date de fin" field="date_fin" data={data} onUpdate={onUpdate} type="date" />
-          <Field label="Volume horaire total CFA" field="volume_heures" data={data} onUpdate={onUpdate} placeholder={`${CAMPUS.heures_cfa} heures`} />
-          <Field label="Fait à" field="fait_a" data={data} onUpdate={onUpdate} placeholder={CAMPUS.ville} />
+          <Field label="Volume horaire total CFA" field="volume_heures" data={data} onUpdate={onUpdate} placeholder="Ex: 441 heures" />
+          <Field label="Fait à" field="fait_a" data={data} onUpdate={onUpdate} placeholder="Ex: Villeneuve d'Ascq" />
         </div>
       </Section>
     </div>

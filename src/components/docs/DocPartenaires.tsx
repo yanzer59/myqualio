@@ -1,12 +1,11 @@
 "use client";
-import { Section, Field, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocPartenaires({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="1. Partenaires sociaux et socio-économiques — Indicateur 28">
         {[0, 1, 2, 3, 4].map((i) => (
           <div key={i} className="grid grid-cols-4 gap-2 mb-1">

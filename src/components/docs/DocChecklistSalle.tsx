@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
@@ -33,7 +33,6 @@ const POINTS = [
 export default function DocChecklistSalle({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="Informations du contrôle">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Date du contrôle" field="date_controle" data={data} onUpdate={onUpdate} type="date" />

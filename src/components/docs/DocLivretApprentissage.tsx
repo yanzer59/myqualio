@@ -1,13 +1,11 @@
 "use client";
-import { CAMPUS } from "@/lib/campus-data";
-import { Section, Field, InfoLine, CampusHeader } from "./shared";
+import { Section, Field } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocLivretApprentissage({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="1. Identification">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nom et prénom de l'apprenti(e)" field="apprenti" data={data} onUpdate={onUpdate} required />
@@ -22,31 +20,24 @@ export default function DocLivretApprentissage({ data, onUpdate }: Props) {
           <Field label="Email MA" field="ma_email" data={data} onUpdate={onUpdate} type="email" />
           <Field label="Date début contrat" field="debut" data={data} onUpdate={onUpdate} type="date" />
           <Field label="Date fin contrat" field="fin" data={data} onUpdate={onUpdate} type="date" />
-        </div>
-        <div className="mt-2">
-          <InfoLine label="Référent CFA" value={`${CAMPUS.directeur_prenom} ${CAMPUS.directeur_nom} — ${CAMPUS.email}`} />
-          <InfoLine label="Rythme" value={CAMPUS.rythme} />
+          <Field label="Référent CFA" field="referent_cfa" data={data} onUpdate={onUpdate} placeholder="Ex: Yanis LADJ — contact@campus-excellence.fr" />
+          <Field label="Rythme" field="rythme" data={data} onUpdate={onUpdate} placeholder="Ex: 1 jour/semaine au CFA — 4 jours en entreprise" />
         </div>
       </Section>
       <Section title="2. Suivi des compétences en entreprise" color="bg-secondary">
-        <p className="text-xs text-gray-text mb-3">Le maître d&apos;apprentissage évalue la progression à chaque période.</p>
-        {CAMPUS.blocs.map((b) => (
-          <div key={b.code} className="mb-3">
-            <h4 className="font-bold text-primary text-xs mb-1 bg-primary-light px-2 py-1 rounded">{b.code} — {b.titre.substring(0, 60)}</h4>
-            {b.competences.map((c) => (
-              <div key={c.code} className="flex items-center gap-2 mb-1 pl-2">
-                <span className="text-xs font-bold text-secondary w-6">{c.code}</span>
-                <span className="text-xs text-dark flex-1">{c.titre}</span>
-                {["Sem 1", "Sem 2"].map((sem) => (
-                  <select key={sem} className="border border-gray-300 rounded px-1 py-0.5 text-[10px] w-20" value={data[`suivi_${c.code}_${sem}`] || ""} onChange={(e) => onUpdate(`suivi_${c.code}_${sem}`, e.target.value)}>
-                    <option value="">{sem}</option>
-                    <option value="Non observé">Non observé</option>
-                    <option value="En cours">En cours</option>
-                    <option value="Acquis">Acquis</option>
-                    <option value="Maîtrisé">Maîtrisé</option>
-                  </select>
-                ))}
-              </div>
+        <p className="text-xs text-gray-text mb-3">Le maître d&apos;apprentissage évalue la progression à chaque période. Ajoutez les compétences ci-dessous.</p>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
+          <div key={i} className="flex items-center gap-2 mb-1 pl-2">
+            <input className="border border-gray-300 rounded px-2 py-0.5 text-xs w-10 text-center" value={data[`suivi_${i}_code`] || ""} onChange={(e) => onUpdate(`suivi_${i}_code`, e.target.value)} placeholder={`C${i + 1}`} />
+            <input className="border border-gray-300 rounded px-2 py-0.5 text-xs flex-1" value={data[`suivi_${i}_titre`] || ""} onChange={(e) => onUpdate(`suivi_${i}_titre`, e.target.value)} placeholder="Intitulé de la compétence" />
+            {["Sem 1", "Sem 2"].map((sem) => (
+              <select key={sem} className="border border-gray-300 rounded px-1 py-0.5 text-[10px] w-20" value={data[`suivi_${i}_${sem}`] || ""} onChange={(e) => onUpdate(`suivi_${i}_${sem}`, e.target.value)}>
+                <option value="">{sem}</option>
+                <option value="Non observé">Non observé</option>
+                <option value="En cours">En cours</option>
+                <option value="Acquis">Acquis</option>
+                <option value="Maîtrisé">Maîtrisé</option>
+              </select>
             ))}
           </div>
         ))}

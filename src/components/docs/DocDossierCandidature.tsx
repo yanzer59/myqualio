@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props {
   data: Record<string, string>;
@@ -9,8 +9,6 @@ interface Props {
 export default function DocDossierCandidature({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
-
       <Section title="1. État civil">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nom de famille" field="nom" data={data} onUpdate={onUpdate} required />

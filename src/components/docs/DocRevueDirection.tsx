@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
@@ -13,7 +13,6 @@ export default function DocRevueDirection({ data, onUpdate }: Props) {
   ];
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <Section title="Informations générales">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Période couverte" field="periode" data={data} onUpdate={onUpdate} placeholder="Mai 2026 — Mai 2027" />

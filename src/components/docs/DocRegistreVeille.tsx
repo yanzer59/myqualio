@@ -1,12 +1,11 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocRegistreVeille({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <div className="bg-primary-light rounded-lg p-3 text-xs text-primary">
         <strong>Indicateurs 23, 24, 25 — Critère 6</strong> : Mise à jour mensuelle minimum. Joindre les captures d&apos;écran en annexe.
       </div>

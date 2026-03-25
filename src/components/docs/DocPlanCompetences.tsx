@@ -1,12 +1,11 @@
 "use client";
-import { Section, Field, TextArea, CampusHeader } from "./shared";
+import { Section, Field, TextArea } from "./shared";
 
 interface Props { data: Record<string, string>; onUpdate: (f: string, v: string) => void; }
 
 export default function DocPlanCompetences({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
-      <CampusHeader />
       <div className="bg-secondary-light rounded-lg p-3 text-xs text-secondary">
         <strong>Indicateur 22 — Critère 5</strong> : Chaque formateur doit disposer d&apos;une action de formation prévue dans les 12 prochains mois.
       </div>
