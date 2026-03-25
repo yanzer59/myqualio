@@ -7,16 +7,53 @@ import { useState, useEffect, useCallback } from "react";
 import DocLivretAccueil from "@/components/docs/DocLivretAccueil";
 import DocConvocation from "@/components/docs/DocConvocation";
 import DocEmargement from "@/components/docs/DocEmargement";
+import DocMissionsEntreprise from "@/components/docs/DocMissionsEntreprise";
+import DocEvaluationEcf from "@/components/docs/DocEvaluationEcf";
 import DocAttestationFin from "@/components/docs/DocAttestationFin";
+import DocAccompagnement from "@/components/docs/DocAccompagnement";
+import DocMoyensMateriels from "@/components/docs/DocMoyensMateriels";
+import DocChecklistSalle from "@/components/docs/DocChecklistSalle";
+import DocConseilPerfectionnement from "@/components/docs/DocConseilPerfectionnement";
+import DocDossierFormateur from "@/components/docs/DocDossierFormateur";
+import DocPlanCompetences from "@/components/docs/DocPlanCompetences";
+import DocRegistreVeille from "@/components/docs/DocRegistreVeille";
+import DocContactsHandicap from "@/components/docs/DocContactsHandicap";
+import DocPartenaires from "@/components/docs/DocPartenaires";
+import DocSatisfaction from "@/components/docs/DocSatisfaction";
+import DocRegistreDysfonctionnements from "@/components/docs/DocRegistreDysfonctionnements";
+import DocRevueDirection from "@/components/docs/DocRevueDirection";
 import DocDossierCandidature from "@/components/docs/DocDossierCandidature";
+import DocTestPositionnement from "@/components/docs/DocTestPositionnement";
+import DocDeroulePedagogique from "@/components/docs/DocDeroulePedagogique";
+import DocLivretApprentissage from "@/components/docs/DocLivretApprentissage";
 import DocGeneric from "@/components/docs/DocGeneric";
 
-const DOC_COMPONENTS: Record<string, React.ComponentType<{ data: Record<string, string>; onUpdate: (field: string, value: string) => void }>> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DOC_COMPONENTS: Record<string, React.ComponentType<any>> = {
   "livret-accueil": DocLivretAccueil,
   "convocation": DocConvocation,
   "emargement": DocEmargement,
+  "missions-entreprise": DocMissionsEntreprise,
+  "evaluation-ecf": DocEvaluationEcf,
   "attestation-fin": DocAttestationFin,
+  "accompagnement": DocAccompagnement,
+  "moyens-materiels": DocMoyensMateriels,
+  "checklist-salle": DocChecklistSalle,
+  "conseil-perfectionnement": DocConseilPerfectionnement,
+  "dossier-formateur": DocDossierFormateur,
+  "plan-competences": DocPlanCompetences,
+  "registre-veille": DocRegistreVeille,
+  "contacts-handicap": DocContactsHandicap,
+  "partenaires": DocPartenaires,
+  "satisfaction-chaud": DocSatisfaction,
+  "satisfaction-froid-entreprise": DocSatisfaction,
+  "satisfaction-formateur": DocSatisfaction,
+  "registre-dysfonctionnements": DocRegistreDysfonctionnements,
+  "revue-direction": DocRevueDirection,
   "dossier-candidature": DocDossierCandidature,
+  "test-positionnement": DocTestPositionnement,
+  "deroule-pedagogique": DocDeroulePedagogique,
+  "livret-apprentissage": DocLivretApprentissage,
 };
 
 export default function DocPage() {
@@ -56,6 +93,11 @@ export default function DocPage() {
   }
 
   const DocComponent = DOC_COMPONENTS[docId] || DocGeneric;
+  // Props spéciaux pour les questionnaires de satisfaction
+  const extraProps: Record<string, unknown> = {};
+  if (docId === "satisfaction-chaud") extraProps.type = "chaud";
+  if (docId === "satisfaction-froid-entreprise") extraProps.type = "froid_entreprise";
+  if (docId === "satisfaction-formateur") extraProps.type = "froid_formateur";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -71,7 +113,7 @@ export default function DocPage() {
       </div>
 
       {/* Formulaire du document */}
-      <DocComponent data={data} onUpdate={handleUpdate} />
+      <DocComponent data={data} onUpdate={handleUpdate} {...extraProps} />
 
       {/* Barre de sauvegarde + génération */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 mt-6 flex items-center justify-between gap-3 -mx-6 lg:-mx-10">
