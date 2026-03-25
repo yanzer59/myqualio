@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/qualiopi");
+    router.replace("/doc/dossier-qualiopi");
   }, [router]);
   return null;
 }
