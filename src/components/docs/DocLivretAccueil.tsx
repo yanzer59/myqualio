@@ -177,8 +177,29 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
 
       <Section title="5. Contacts utiles">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Urgence — numéros" field="urgence_tel" data={data} onUpdate={onUpdate} placeholder="15 (SAMU), 17 (Police), 18 (Pompiers)" />
-          <Field label="Médecine du travail" field="medecine_travail" data={data} onUpdate={onUpdate} placeholder="Nom et téléphone" />
+          <Select label="SAMU" field="urgence_samu" data={data} onUpdate={onUpdate} options={["15 — SAMU"]} required />
+          <Select label="Police / Gendarmerie" field="urgence_police" data={data} onUpdate={onUpdate} options={["17 — Police / Gendarmerie"]} required />
+          <Select label="Pompiers" field="urgence_pompiers" data={data} onUpdate={onUpdate} options={["18 — Pompiers"]} required />
+          <Select label="Numéro d'urgence européen" field="urgence_europe" data={data} onUpdate={onUpdate} options={["112 — Numéro d'urgence européen"]} />
+          <Select label="Urgences SMS (sourds/malentendants)" field="urgence_sms" data={data} onUpdate={onUpdate} options={["114 — Urgences par SMS"]} />
+          <Select label="Enfance en danger" field="urgence_enfance" data={data} onUpdate={onUpdate} options={["119 — Enfance en danger"]} />
+          <Select label="Violences femmes" field="urgence_violences" data={data} onUpdate={onUpdate} options={["3919 — Violences faites aux femmes"]} />
+          <Select label="Drogue info service" field="urgence_drogue" data={data} onUpdate={onUpdate} options={["0 800 23 13 13 — Drogue info service"]} />
+          <Select label="Suicide écoute" field="urgence_suicide" data={data} onUpdate={onUpdate} options={["3114 — Numéro national de prévention du suicide"]} />
+          <Select label="Centre antipoison" field="urgence_antipoison" data={data} onUpdate={onUpdate} options={[
+            "01 40 05 48 48 — Centre antipoison Paris",
+            "03 28 44 44 44 — Centre antipoison Lille",
+            "04 72 11 69 11 — Centre antipoison Lyon",
+            "05 56 96 40 80 — Centre antipoison Bordeaux",
+            "02 41 48 21 21 — Centre antipoison Angers",
+          ]} />
+        </div>
+        <div className="border-t border-gray-200 mt-4 pt-4">
+          <p className="text-xs font-bold text-primary uppercase mb-2">Autres contacts</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Médecine du travail" field="medecine_travail" data={data} onUpdate={onUpdate} placeholder="Nom et téléphone" />
+            <PhoneField label="Téléphone médecine du travail" field="medecine_travail_tel" data={data} onUpdate={onUpdate} />
+          </div>
         </div>
       </Section>
 
