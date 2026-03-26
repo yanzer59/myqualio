@@ -71,7 +71,14 @@ export function PhoneField({ label, field, data, onUpdate, required, placeholder
   );
 }
 
-// Champ email avec validation
+// Domaines email courants
+const EMAIL_DOMAINS = [
+  "gmail.com", "outlook.fr", "outlook.com", "hotmail.fr", "hotmail.com",
+  "yahoo.fr", "yahoo.com", "orange.fr", "sfr.fr", "free.fr",
+  "laposte.net", "icloud.com", "wanadoo.fr", "live.fr", "protonmail.com",
+];
+
+// Champ email avec validation + suggestions de domaines
 export function EmailField({ label, field, data, onUpdate, required, placeholder }: {
   label: string; field: string; data: Record<string, string>; onUpdate: (f: string, v: string) => void;
   required?: boolean; placeholder?: string;
@@ -79,9 +86,38 @@ export function EmailField({ label, field, data, onUpdate, required, placeholder
   const value = data[field] || "";
   const isEmpty = required && !value.trim();
   const isInvalid = value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const [showDomains, setShowDomains] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Détecter si on vient de taper "@" ou si on est après "@" sans point
+  const atIndex = value.indexOf("@");
+  const hasAt = atIndex !== -1;
+  const afterAt = hasAt ? value.slice(atIndex + 1) : "";
+  const beforeAt = hasAt ? value.slice(0, atIndex) : value;
+  const needsSuggestion = hasAt && !afterAt.includes(".") && beforeAt.length > 0;
+
+  // Filtrer les domaines qui matchent ce qui est tapé après @
+  const filteredDomains = needsSuggestion
+    ? EMAIL_DOMAINS.filter((d) => d.startsWith(afterAt.toLowerCase()) || afterAt === "")
+    : [];
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDomains(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function selectDomain(domain: string) {
+    onUpdate(field, beforeAt + "@" + domain);
+    setShowDomains(false);
+  }
 
   return (
-    <div>
+    <div ref={wrapperRef} className="relative">
       <label className={labelCls}>
         {label}
         {required && <span className="text-red ml-1">*</span>}
@@ -92,11 +128,31 @@ export function EmailField({ label, field, data, onUpdate, required, placeholder
           type="email"
           className={((isEmpty || isInvalid) ? inputErrorCls : inputCls) + " pl-9"}
           value={value}
-          onChange={(e) => onUpdate(field, e.target.value.toLowerCase())}
+          onChange={(e) => {
+            onUpdate(field, e.target.value.toLowerCase());
+            setShowDomains(e.target.value.includes("@"));
+          }}
+          onFocus={() => { if (needsSuggestion) setShowDomains(true); }}
           placeholder={placeholder || "contact@exemple.fr"}
+          autoComplete="off"
         />
       </div>
-      {isInvalid && <p className="text-red text-xs mt-1">Adresse email invalide</p>}
+      {showDomains && filteredDomains.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {filteredDomains.map((domain) => (
+            <button
+              key={domain}
+              type="button"
+              onClick={() => selectDomain(domain)}
+              className="w-full text-left px-4 py-2 hover:bg-primary-light transition-colors border-b border-gray-100 last:border-0 text-sm"
+            >
+              <span className="text-gray-text">{beforeAt}@</span>
+              <span className="font-medium text-primary">{domain}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {isInvalid && !showDomains && <p className="text-red text-xs mt-1">Adresse email invalide</p>}
     </div>
   );
 }
