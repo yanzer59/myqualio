@@ -129,7 +129,28 @@ export default function DocPage() {
           {saved && <span className="text-green text-sm font-medium animate-pulse">Sauvegardé !</span>}
         </div>
         <button
-          onClick={() => alert("Génération DOCX en cours de développement")}
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/generate-doc", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ docId, docTitle: doc.title, data }),
+              });
+              if (!res.ok) throw new Error("Erreur serveur");
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${doc.num}-${doc.id}.docx`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } catch (err) {
+              alert("Erreur lors de la génération du document.");
+              console.error(err);
+            }
+          }}
           className="bg-green hover:bg-green/90 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
