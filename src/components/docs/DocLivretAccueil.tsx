@@ -1,53 +1,11 @@
 "use client";
 import { Section, Field, TextArea, Select, PhoneField, EmailField, AddressField } from "./shared";
+import { FORMATIONS_RNCP, getFormationFromOption, getFormationOptions } from "@/lib/formations-rncp";
 
 interface Props {
   data: Record<string, string>;
   onUpdate: (field: string, value: string) => void;
 }
-
-// Listes déroulantes
-const FORMATIONS = [
-  "Titre Professionnel Agent de Médiation, Information et Services (AMIS)",
-  "Titre Professionnel Assistant de Direction",
-  "Titre Professionnel Assistant Ressources Humaines",
-  "Titre Professionnel Comptable Assistant",
-  "Titre Professionnel Secrétaire Assistant",
-  "Titre Professionnel Conseiller en Insertion Professionnelle",
-  "Titre Professionnel Employé Commercial",
-  "Titre Professionnel Manager d'Unité Marchande",
-  "Titre Professionnel Négociateur Technico-Commercial",
-  "Titre Professionnel Développeur Web et Web Mobile",
-  "CAP Accompagnant Éducatif Petite Enfance",
-  "BTS Management Commercial Opérationnel (MCO)",
-  "BTS Négociation et Digitalisation de la Relation Client (NDRC)",
-  "BTS Support à l'Action Managériale (SAM)",
-  "BTS Comptabilité et Gestion",
-];
-
-const NIVEAUX = [
-  "Niveau 3 (CAP/BEP)",
-  "Niveau 4 (Bac)",
-  "Niveau 5 (Bac+2 / BTS / DUT)",
-  "Niveau 6 (Bac+3 / Licence)",
-  "Niveau 7 (Bac+5 / Master)",
-];
-
-const CERTIFICATEURS = [
-  "Ministère du Travail, du Plein Emploi et de l'Insertion",
-  "Ministère de l'Éducation Nationale",
-  "Ministère de l'Enseignement Supérieur",
-  "Ministère de la Santé",
-  "Ministère de l'Agriculture",
-];
-
-const DUREES = [
-  "6 mois", "8 mois", "10 mois", "12 mois", "14 mois", "16 mois", "18 mois", "24 mois",
-];
-
-const HEURES_CFA = [
-  "200h", "300h", "400h", "441h", "450h", "500h", "600h", "675h", "700h", "800h", "900h", "1000h", "1200h", "1350h",
-];
 
 const RYTHMES = [
   "1 jour/semaine au CFA — 4 jours en entreprise",
@@ -60,13 +18,8 @@ const RYTHMES = [
 ];
 
 const HORAIRES = [
-  "8h00 — 16h00",
-  "8h30 — 16h30",
-  "9h00 — 17h00",
-  "9h00 — 16h30",
-  "9h30 — 17h30",
-  "8h00 — 12h00 / 13h00 — 17h00",
-  "9h00 — 12h30 / 13h30 — 17h00",
+  "8h00 — 16h00", "8h30 — 16h30", "9h00 — 17h00", "9h00 — 16h30", "9h30 — 17h30",
+  "8h00 — 12h00 / 13h00 — 17h00", "9h00 — 12h30 / 13h30 — 17h00",
 ];
 
 const JOURS = [
@@ -87,12 +40,50 @@ const FORMES_JURIDIQUES = [
   "Établissement public",
 ];
 
+const DUREES = [
+  "6 mois", "8 mois", "10 mois", "12 mois", "14 mois", "16 mois", "18 mois", "24 mois",
+];
+
 export default function DocLivretAccueil({ data, onUpdate }: Props) {
+  // Quand on sélectionne une formation, remplir auto les champs RNCP + blocs
+  function handleFormationChange(field: string, value: string) {
+    onUpdate(field, value);
+    const formation = getFormationFromOption(value);
+    if (formation) {
+      onUpdate("formation_rncp", formation.rncp);
+      onUpdate("formation_niveau", formation.niveau);
+      onUpdate("formation_certificateur", formation.certificateur);
+      onUpdate("formation_date_enreg", formation.date_enregistrement);
+      onUpdate("formation_date_echeance", formation.date_echeance);
+      onUpdate("formation_duree", formation.duree_indicative);
+      onUpdate("formation_heures", formation.heures_indicatives);
+      // Remplir les blocs de compétences
+      formation.blocs.forEach((bloc, i) => {
+        onUpdate(`bloc_${i}_code`, bloc.code);
+        onUpdate(`bloc_${i}_rncp`, bloc.rncp);
+        onUpdate(`bloc_${i}_titre`, bloc.titre);
+        onUpdate(`bloc_${i}_heures`, bloc.heures ? String(bloc.heures) : "");
+      });
+      // Nettoyer les blocs en trop si la nouvelle formation en a moins
+      for (let i = formation.blocs.length; i < 6; i++) {
+        onUpdate(`bloc_${i}_code`, "");
+        onUpdate(`bloc_${i}_rncp`, "");
+        onUpdate(`bloc_${i}_titre`, "");
+        onUpdate(`bloc_${i}_heures`, "");
+      }
+      onUpdate("nb_blocs", String(formation.blocs.length));
+    }
+  }
+
+  // Nombre de blocs à afficher
+  const nbBlocs = parseInt(data.nb_blocs || "3") || 3;
+  const maxBlocs = Math.max(nbBlocs, 2);
+
   return (
     <div className="space-y-4">
-      {/* Info champs obligatoires */}
       <div className="bg-accent-light border border-accent/30 rounded-lg px-4 py-2 text-xs text-dark">
         Les champs marqués d&apos;un <span className="text-red font-bold">*</span> sont obligatoires.
+        Sélectionnez une formation pour <strong>remplir automatiquement</strong> les blocs de compétences.
       </div>
 
       <Section title="1. Présentation de l'organisme">
@@ -114,25 +105,45 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
       <Section title="2. La formation" color="bg-secondary">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <Select label="Intitulé de la formation" field="formation_titre" data={data} onUpdate={onUpdate} options={FORMATIONS} placeholder="— Choisir la formation —" required />
+            <Select
+              label="Titre professionnel"
+              field="formation_titre"
+              data={data}
+              onUpdate={handleFormationChange}
+              options={getFormationOptions()}
+              placeholder="— Sélectionner le titre RNCP —"
+              required
+            />
           </div>
-          <Field label="Code RNCP" field="formation_rncp" data={data} onUpdate={onUpdate} placeholder="Ex: RNCP 37722" required />
-          <Select label="Niveau" field="formation_niveau" data={data} onUpdate={onUpdate} options={NIVEAUX} required />
+
+          {/* Champs auto-remplis mais modifiables */}
+          <Field label="Code RNCP" field="formation_rncp" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" required />
+          <Field label="Niveau" field="formation_niveau" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" required />
           <div className="sm:col-span-2">
-            <Select label="Certificateur" field="formation_certificateur" data={data} onUpdate={onUpdate} options={CERTIFICATEURS} required />
+            <Field label="Certificateur" field="formation_certificateur" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" required />
           </div>
+          <Field label="Date d'enregistrement RNCP" field="formation_date_enreg" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" />
+          <Field label="Échéance certification" field="formation_date_echeance" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" />
           <Select label="Durée totale" field="formation_duree" data={data} onUpdate={onUpdate} options={DUREES} required />
-          <Select label="Heures CFA" field="formation_heures" data={data} onUpdate={onUpdate} options={HEURES_CFA} required />
+          <Field label="Heures CFA" field="formation_heures" data={data} onUpdate={onUpdate} placeholder="Auto-rempli" required />
           <div className="sm:col-span-2">
             <Select label="Rythme d'alternance" field="formation_rythme" data={data} onUpdate={onUpdate} options={RYTHMES} required />
           </div>
         </div>
 
+        {/* Blocs de compétences — remplis automatiquement */}
         <div className="mt-4">
-          <p className="text-xs font-bold text-secondary uppercase mb-2">Blocs de compétences</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-secondary uppercase">Blocs de compétences (auto-remplis)</p>
+            {data.formation_titre && (
+              <span className="text-xs bg-green/10 text-green px-2 py-1 rounded font-medium">
+                ✓ {maxBlocs} blocs chargés
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-light-gray rounded-lg p-4">
+            {Array.from({ length: maxBlocs }).map((_, i) => (
+              <div key={i} className={`rounded-lg p-4 ${data[`bloc_${i}_code`] ? "bg-secondary/5 border border-secondary/20" : "bg-light-gray"}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label={`Bloc ${i + 1} — Code`} field={`bloc_${i}_code`} data={data} onUpdate={onUpdate} placeholder={`Ex: BC0${i + 1}`} />
                   <Field label="Code RNCP" field={`bloc_${i}_rncp`} data={data} onUpdate={onUpdate} placeholder="Ex: RNCP37722BC01" />
