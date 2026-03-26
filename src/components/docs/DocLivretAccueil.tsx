@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, TextArea, Select } from "./shared";
+import { Section, Field, TextArea, Select, PhoneField, EmailField, AddressField } from "./shared";
 
 interface Props {
   data: Record<string, string>;
@@ -90,17 +90,22 @@ const FORMES_JURIDIQUES = [
 export default function DocLivretAccueil({ data, onUpdate }: Props) {
   return (
     <div className="space-y-4">
+      {/* Info champs obligatoires */}
+      <div className="bg-accent-light border border-accent/30 rounded-lg px-4 py-2 text-xs text-dark">
+        Les champs marqués d&apos;un <span className="text-red font-bold">*</span> sont obligatoires.
+      </div>
+
       <Section title="1. Présentation de l'organisme">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Raison sociale" field="raison_sociale" data={data} onUpdate={onUpdate} placeholder="Nom de votre CFA" />
-          <Select label="Forme juridique" field="forme_juridique" data={data} onUpdate={onUpdate} options={FORMES_JURIDIQUES} />
-          <Field label="Président / Dirigeant" field="president" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" />
-          <Field label="Responsable pédagogique" field="responsable_peda" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" />
+          <Field label="Raison sociale" field="raison_sociale" data={data} onUpdate={onUpdate} placeholder="Nom de votre CFA" required />
+          <Select label="Forme juridique" field="forme_juridique" data={data} onUpdate={onUpdate} options={FORMES_JURIDIQUES} required />
+          <Field label="Président / Dirigeant" field="president" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" required />
+          <Field label="Responsable pédagogique" field="responsable_peda" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" required />
           <div className="sm:col-span-2">
-            <Field label="Adresse" field="adresse" data={data} onUpdate={onUpdate} placeholder="Adresse complète — Code postal Ville" />
+            <AddressField label="Adresse" field="adresse" data={data} onUpdate={onUpdate} required />
           </div>
-          <Field label="Email" field="email_contact" data={data} onUpdate={onUpdate} placeholder="contact@..." />
-          <Field label="Téléphone" field="telephone" data={data} onUpdate={onUpdate} placeholder="01 23 45 67 89" />
+          <EmailField label="Email" field="email_contact" data={data} onUpdate={onUpdate} required />
+          <PhoneField label="Téléphone" field="telephone" data={data} onUpdate={onUpdate} required />
           <Field label="Site internet" field="site_web" data={data} onUpdate={onUpdate} placeholder="www.exemple.fr" />
           <Field label="LinkedIn" field="linkedin" data={data} onUpdate={onUpdate} placeholder="linkedin.com/company/..." />
         </div>
@@ -109,17 +114,17 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
       <Section title="2. La formation" color="bg-secondary">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <Select label="Intitulé de la formation" field="formation_titre" data={data} onUpdate={onUpdate} options={FORMATIONS} placeholder="— Choisir la formation —" />
+            <Select label="Intitulé de la formation" field="formation_titre" data={data} onUpdate={onUpdate} options={FORMATIONS} placeholder="— Choisir la formation —" required />
           </div>
-          <Field label="Code RNCP" field="formation_rncp" data={data} onUpdate={onUpdate} placeholder="Ex: RNCP 37722" />
-          <Select label="Niveau" field="formation_niveau" data={data} onUpdate={onUpdate} options={NIVEAUX} />
+          <Field label="Code RNCP" field="formation_rncp" data={data} onUpdate={onUpdate} placeholder="Ex: RNCP 37722" required />
+          <Select label="Niveau" field="formation_niveau" data={data} onUpdate={onUpdate} options={NIVEAUX} required />
           <div className="sm:col-span-2">
-            <Select label="Certificateur" field="formation_certificateur" data={data} onUpdate={onUpdate} options={CERTIFICATEURS} />
+            <Select label="Certificateur" field="formation_certificateur" data={data} onUpdate={onUpdate} options={CERTIFICATEURS} required />
           </div>
-          <Select label="Durée totale" field="formation_duree" data={data} onUpdate={onUpdate} options={DUREES} />
-          <Select label="Heures CFA" field="formation_heures" data={data} onUpdate={onUpdate} options={HEURES_CFA} />
+          <Select label="Durée totale" field="formation_duree" data={data} onUpdate={onUpdate} options={DUREES} required />
+          <Select label="Heures CFA" field="formation_heures" data={data} onUpdate={onUpdate} options={HEURES_CFA} required />
           <div className="sm:col-span-2">
-            <Select label="Rythme d'alternance" field="formation_rythme" data={data} onUpdate={onUpdate} options={RYTHMES} />
+            <Select label="Rythme d'alternance" field="formation_rythme" data={data} onUpdate={onUpdate} options={RYTHMES} required />
           </div>
         </div>
 
@@ -144,8 +149,8 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
 
       <Section title="3. Informations pratiques">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Select label="Horaires du CFA" field="horaires_cfa" data={data} onUpdate={onUpdate} options={HORAIRES} />
-          <Select label="Jour(s) de formation CFA" field="jour_cfa" data={data} onUpdate={onUpdate} options={JOURS} />
+          <Select label="Horaires du CFA" field="horaires_cfa" data={data} onUpdate={onUpdate} options={HORAIRES} required />
+          <Select label="Jour(s) de formation CFA" field="jour_cfa" data={data} onUpdate={onUpdate} options={JOURS} required />
           <Field label="Accès transports" field="acces_transports" data={data} onUpdate={onUpdate} placeholder="Métro, bus, parking..." />
           <Field label="Restauration" field="restauration" data={data} onUpdate={onUpdate} placeholder="Salle de pause, micro-ondes..." />
         </div>
@@ -153,9 +158,9 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
 
       <Section title="4. Référent handicap">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Nom du référent" field="referent_handicap" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" />
-          <Field label="Email référent" field="referent_handicap_email" data={data} onUpdate={onUpdate} placeholder="email@..." />
-          <Field label="Téléphone référent" field="referent_handicap_tel" data={data} onUpdate={onUpdate} placeholder="01 23 45 67 89" />
+          <Field label="Nom du référent" field="referent_handicap" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" required />
+          <EmailField label="Email référent" field="referent_handicap_email" data={data} onUpdate={onUpdate} required />
+          <PhoneField label="Téléphone référent" field="referent_handicap_tel" data={data} onUpdate={onUpdate} />
         </div>
       </Section>
 
