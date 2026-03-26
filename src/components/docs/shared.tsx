@@ -296,6 +296,157 @@ export function Select({ label, field, data, onUpdate, options, placeholder, req
   );
 }
 
+// Recherche d'entreprise via API gouv.fr — remplit automatiquement les infos organisme
+interface CompanyResult {
+  nom: string;
+  siret: string;
+  siren: string;
+  adresse: string;
+  cp: string;
+  ville: string;
+  forme_juridique: string;
+  naf: string;
+  dirigeant: string;
+  date_creation: string;
+  tranche_effectif: string;
+}
+
+const FORMES_MAP: Record<string, string> = {
+  "SAS": "SAS (Société par Actions Simplifiée)",
+  "SASU": "SASU (Société par Actions Simplifiée Unipersonnelle)",
+  "SARL": "SARL (Société à Responsabilité Limitée)",
+  "EURL": "EURL (Entreprise Unipersonnelle à Responsabilité Limitée)",
+  "SA": "SA (Société Anonyme)",
+  "SCI": "SCI (Société Civile Immobilière)",
+  "Association": "Association loi 1901",
+};
+
+export function CompanySearch({ onSelect }: {
+  onSelect: (company: CompanyResult) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<CompanyResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const search = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults([]); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`https://recherche-entreprises.api.gouv.fr/search?q=${encodeURIComponent(q)}&per_page=6`);
+      const json = await res.json();
+      const companies: CompanyResult[] = (json.results || []).map((r: Record<string, unknown>) => {
+        const siege = r.siege as Record<string, unknown> || {};
+        const dirigeants = (r.dirigeants as Array<Record<string, unknown>>) || [];
+        const dirigeant = dirigeants.length > 0
+          ? `${dirigeants[0].prenom || ""} ${dirigeants[0].nom || ""}`.trim()
+          : "";
+        const natureJuridique = (r.nature_juridique as string) || "";
+        let forme = "";
+        for (const [key, val] of Object.entries(FORMES_MAP)) {
+          if (natureJuridique.toLowerCase().includes(key.toLowerCase())) { forme = val; break; }
+        }
+        if (!forme && natureJuridique) forme = natureJuridique;
+
+        return {
+          nom: (r.nom_complet as string) || (r.nom_raison_sociale as string) || "",
+          siret: (siege.siret as string) || "",
+          siren: (r.siren as string) || "",
+          adresse: (siege.adresse as string) || "",
+          cp: (siege.code_postal as string) || "",
+          ville: (siege.libelle_commune as string) || "",
+          forme_juridique: forme,
+          naf: (siege.activite_principale as string) || "",
+          dirigeant,
+          date_creation: (r.date_creation as string) || "",
+          tranche_effectif: (r.tranche_effectif_salarie as string) || "",
+        };
+      });
+      setResults(companies);
+      setShowResults(companies.length > 0);
+    } catch {
+      setResults([]);
+    }
+    setLoading(false);
+  }, []);
+
+  function handleChange(value: string) {
+    setQuery(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => search(value), 400);
+  }
+
+  function selectCompany(c: CompanyResult) {
+    setQuery(c.nom);
+    setShowResults(false);
+    onSelect(c);
+  }
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative sm:col-span-2">
+      <label className={labelCls}>
+        🔍 Rechercher une entreprise <span className="text-gray-text font-normal">(auto-remplissage)</span>
+      </label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-text text-sm">🏢</span>
+        <input
+          type="text"
+          className={inputCls + " pl-9"}
+          value={query}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={() => results.length > 0 && setShowResults(true)}
+          placeholder="Tapez le nom de la société (ex: Campus Excellence, APEN...)"
+          autoComplete="off"
+        />
+        {loading && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2">
+            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block"></span>
+          </span>
+        )}
+      </div>
+      {showResults && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+          {results.map((c, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => selectCompany(c)}
+              className="w-full text-left px-4 py-3 hover:bg-primary-light transition-colors border-b border-gray-100 last:border-0"
+            >
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-sm text-primary">{c.nom}</div>
+                {c.forme_juridique && (
+                  <span className="text-[10px] bg-secondary/10 text-secondary px-2 py-0.5 rounded">{c.forme_juridique.split("(")[0].trim()}</span>
+                )}
+              </div>
+              <div className="text-xs text-gray-text mt-0.5">
+                {c.siret && <span>SIRET {c.siret} · </span>}
+                {c.adresse && <span>{c.adresse} </span>}
+                {c.cp && c.ville && <span>— {c.cp} {c.ville}</span>}
+              </div>
+              {c.dirigeant && (
+                <div className="text-xs text-dark mt-0.5">Dirigeant : {c.dirigeant}</div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Section avec titre
 export function Section({ title, color = "bg-primary", children }: { title: string; color?: string; children: React.ReactNode }) {
   return (

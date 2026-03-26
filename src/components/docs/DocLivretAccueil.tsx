@@ -1,5 +1,5 @@
 "use client";
-import { Section, Field, TextArea, Select, PhoneField, EmailField, AddressField } from "./shared";
+import { Section, Field, TextArea, Select, PhoneField, EmailField, AddressField, CompanySearch } from "./shared";
 import { FORMATIONS_RNCP, getFormationFromOption, getFormationOptions } from "@/lib/formations-rncp";
 
 interface Props {
@@ -88,6 +88,15 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
 
       <Section title="1. Présentation de l'organisme">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Recherche entreprise — auto-remplit tout */}
+          <CompanySearch onSelect={(c) => {
+            onUpdate("raison_sociale", c.nom);
+            onUpdate("forme_juridique", c.forme_juridique);
+            onUpdate("siret", c.siret);
+            onUpdate("naf", c.naf);
+            onUpdate("adresse", c.adresse ? `${c.adresse} — ${c.cp} ${c.ville}` : "");
+            if (c.dirigeant) onUpdate("president", c.dirigeant);
+          }} />
           <Field label="Raison sociale" field="raison_sociale" data={data} onUpdate={onUpdate} placeholder="Nom de votre CFA" required />
           <Select label="Forme juridique" field="forme_juridique" data={data} onUpdate={onUpdate} options={FORMES_JURIDIQUES} required />
           <Field label="Président / Dirigeant" field="president" data={data} onUpdate={onUpdate} placeholder="Prénom NOM" required />
@@ -97,6 +106,8 @@ export default function DocLivretAccueil({ data, onUpdate }: Props) {
           </div>
           <EmailField label="Email" field="email_contact" data={data} onUpdate={onUpdate} required />
           <PhoneField label="Téléphone" field="telephone" data={data} onUpdate={onUpdate} required />
+          <Field label="SIRET" field="siret" data={data} onUpdate={onUpdate} placeholder="Auto-rempli par la recherche" />
+          <Field label="Code NAF / APE" field="naf" data={data} onUpdate={onUpdate} placeholder="Auto-rempli par la recherche" />
           <Field label="Site internet" field="site_web" data={data} onUpdate={onUpdate} placeholder="www.exemple.fr" />
           <Field label="LinkedIn" field="linkedin" data={data} onUpdate={onUpdate} placeholder="linkedin.com/company/..." />
         </div>
