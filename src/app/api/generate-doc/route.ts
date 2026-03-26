@@ -1,182 +1,248 @@
 import { NextResponse } from "next/server";
-import {
-  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  Header, Footer, AlignmentType, HeadingLevel, LevelFormat,
-  BorderStyle, WidthType, ShadingType, PageNumber, PageBreak,
-} from "docx";
-
-// ============ COULEURS ============
-const C = {
-  primary: "0D6B4E", secondary: "1B6B8A", accent: "D4AC0D",
-  green: "27AE60", red: "E74C3C", light: "F0FAF6",
-  dark: "1C2833", gray: "5D6D7E", white: "FFFFFF",
-  lightGray: "F2F3F4", border: "BDC3C7",
-};
-
-const noBorder = { style: BorderStyle.NONE, size: 0, color: C.white };
-
-// ============ HELPERS ============
-function banner(title: string, color = C.primary) {
-  return new Paragraph({
-    spacing: { before: 240, after: 0 },
-    shading: { fill: color, type: ShadingType.CLEAR },
-    children: [new TextRun({ text: "   " + title, bold: true, size: 22, font: "Calibri", color: C.white })],
-  });
-}
-
-function fieldRow(label: string, value: string, shading?: string) {
-  return new TableRow({
-    children: [
-      new TableCell({
-        borders: { top: noBorder, bottom: { style: BorderStyle.DOTTED, size: 1, color: C.border }, left: noBorder, right: noBorder },
-        width: { size: 3200, type: WidthType.DXA },
-        margins: { top: 50, bottom: 50, left: 100, right: 40 },
-        shading: shading ? { fill: shading, type: ShadingType.CLEAR } : undefined,
-        children: [new Paragraph({ children: [new TextRun({ text: label + " :", bold: true, size: 18, font: "Calibri", color: C.primary })] })],
-      }),
-      new TableCell({
-        borders: { top: noBorder, bottom: { style: BorderStyle.DOTTED, size: 1, color: C.border }, left: noBorder, right: noBorder },
-        width: { size: 6306, type: WidthType.DXA },
-        margins: { top: 50, bottom: 50, left: 40, right: 100 },
-        shading: shading ? { fill: shading, type: ShadingType.CLEAR } : undefined,
-        children: [new Paragraph({ children: [new TextRun({ text: value || "—", size: 18, font: "Calibri", color: C.dark })] })],
-      }),
-    ],
-  });
-}
-
-function fieldTable(rows: TableRow[]) {
-  return new Table({ width: { size: 9506, type: WidthType.DXA }, columnWidths: [3200, 6306], rows });
-}
-
-function h1(text: string) {
-  return new Paragraph({
-    heading: HeadingLevel.HEADING_1,
-    spacing: { before: 300, after: 180 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 3, color: C.accent, space: 4 } },
-    children: [new TextRun({ text, bold: true, size: 30, font: "Calibri", color: C.primary })],
-  });
-}
-
-function h2(text: string) {
-  return new Paragraph({
-    heading: HeadingLevel.HEADING_2,
-    spacing: { before: 200, after: 100 },
-    children: [new TextRun({ text, bold: true, size: 24, font: "Calibri", color: C.secondary })],
-  });
-}
-
-function para(text: string, opts?: { bold?: boolean; italic?: boolean; color?: string; size?: number }) {
-  return new Paragraph({
-    spacing: { before: 60, after: 60 },
-    alignment: AlignmentType.JUSTIFIED,
-    children: [new TextRun({ text, size: opts?.size || 20, font: "Calibri", color: opts?.color || C.dark, bold: opts?.bold, italics: opts?.italic })],
-  });
-}
-
-function bullet(text: string) {
-  return new Paragraph({
-    numbering: { reference: "bullets", level: 0 },
-    spacing: { before: 40, after: 40 },
-    children: [new TextRun({ text, size: 20, font: "Calibri", color: C.dark })],
-  });
-}
-
-function empty() { return new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }); }
-function pb() { return new Paragraph({ children: [new PageBreak()] }); }
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type D = Record<string, string>;
 
-// ============ LIVRET D'ACCUEIL ============
-function buildLivretAccueil(d: D) {
-  const children: (Paragraph | Table)[] = [];
+// ============ COULEURS ============
+const PRIMARY: [number, number, number] = [13, 107, 78];
+const SECONDARY: [number, number, number] = [27, 107, 138];
+const ACCENT: [number, number, number] = [212, 172, 13];
+const DARK: [number, number, number] = [28, 40, 51];
+const GRAY: [number, number, number] = [93, 109, 126];
+const LIGHT: [number, number, number] = [240, 250, 246];
+const WHITE: [number, number, number] = [255, 255, 255];
 
+// ============ HELPERS ============
+function addBanner(pdf: jsPDF, text: string, y: number, color: [number, number, number] = PRIMARY): number {
+  pdf.setFillColor(...color);
+  pdf.rect(15, y, 180, 8, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+  pdf.setTextColor(...WHITE);
+  pdf.text("   " + text, 17, y + 5.5);
+  pdf.setTextColor(...DARK);
+  return y + 12;
+}
+
+function addH1(pdf: jsPDF, text: string, y: number): number {
+  if (y > 260) { pdf.addPage(); y = 20; }
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.setTextColor(...PRIMARY);
+  pdf.text(text, 15, y);
+  // ligne accent sous le titre
+  pdf.setDrawColor(...ACCENT);
+  pdf.setLineWidth(0.5);
+  pdf.line(15, y + 2, 195, y + 2);
+  pdf.setTextColor(...DARK);
+  return y + 8;
+}
+
+function addField(pdf: jsPDF, label: string, value: string, y: number, shade = false): number {
+  if (y > 275) { pdf.addPage(); y = 20; }
+  if (shade) {
+    pdf.setFillColor(...LIGHT);
+    pdf.rect(15, y - 3.5, 180, 7, "F");
+  }
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(...PRIMARY);
+  pdf.text(label + " :", 17, y);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(...DARK);
+  // Wrap long values
+  const maxWidth = 120;
+  const lines = pdf.splitTextToSize(value || "—", maxWidth);
+  pdf.text(lines, 70, y);
+  const lineHeight = lines.length > 1 ? lines.length * 4 : 0;
+  // Ligne pointillée
+  pdf.setDrawColor(189, 195, 199);
+  pdf.setLineWidth(0.2);
+  pdf.line(17, y + 2 + lineHeight, 193, y + 2 + lineHeight);
+  return y + 6 + lineHeight;
+}
+
+function addPara(pdf: jsPDF, text: string, y: number, opts?: { bold?: boolean; italic?: boolean; size?: number; color?: [number, number, number] }): number {
+  if (y > 270) { pdf.addPage(); y = 20; }
+  const style = opts?.bold ? "bold" : opts?.italic ? "italic" : "normal";
+  pdf.setFont("helvetica", style);
+  pdf.setFontSize(opts?.size || 10);
+  pdf.setTextColor(...(opts?.color || DARK));
+  const lines = pdf.splitTextToSize(text, 170);
+  pdf.text(lines, 17, y);
+  return y + lines.length * 4.5 + 2;
+}
+
+function addFooter(pdf: jsPDF, organisme: string) {
+  const pageCount = pdf.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    pdf.setPage(i);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...GRAY);
+    pdf.text(`${organisme} — MyQualio`, 15, 290);
+    pdf.text(`Page ${i}/${pageCount}`, 185, 290);
+  }
+}
+
+// ============ LIVRET D'ACCUEIL ============
+function buildLivretAccueil(pdf: jsPDF, d: D) {
   // Page de couverture
-  children.push(
-    new Paragraph({ spacing: { before: 2000 } }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: d.raison_sociale || "Organisme de Formation", bold: true, size: 56, font: "Calibri", color: C.primary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 100 }, children: [new TextRun({ text: "Centre de Formation en Alternance", size: 24, font: "Calibri", color: C.gray })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200 }, children: [new TextRun({ text: d.adresse || "", size: 20, font: "Calibri", color: C.gray })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: d.email_contact || "", size: 20, font: "Calibri", color: C.gray })] }),
-    new Paragraph({ spacing: { before: 600 } }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "LIVRET D'ACCUEIL", bold: true, size: 48, font: "Calibri", color: C.secondary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 100 }, children: [new TextRun({ text: "de l'apprenant", size: 28, font: "Calibri", color: C.secondary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 400 }, children: [new TextRun({ text: d.formation_titre || "Formation", bold: true, size: 24, font: "Calibri", color: C.primary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${d.formation_rncp || ""} — ${d.formation_niveau || ""}`, size: 20, font: "Calibri", color: C.gray })] }),
-    pb(),
-  );
+  pdf.setFillColor(...PRIMARY);
+  pdf.rect(0, 0, 210, 297, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(32);
+  pdf.setTextColor(...WHITE);
+  pdf.text(d.raison_sociale || "Organisme de Formation", 105, 80, { align: "center" });
+
+  pdf.setFontSize(14);
+  pdf.setTextColor(200, 230, 215);
+  pdf.text("Centre de Formation en Alternance", 105, 95, { align: "center" });
+
+  pdf.setFontSize(10);
+  pdf.text(d.adresse || "", 105, 110, { align: "center" });
+  pdf.text(d.email_contact || "", 105, 118, { align: "center" });
+
+  pdf.setFillColor(...ACCENT);
+  pdf.rect(80, 140, 50, 1, "F");
+
+  pdf.setFontSize(28);
+  pdf.setTextColor(...WHITE);
+  pdf.text("LIVRET D'ACCUEIL", 105, 170, { align: "center" });
+  pdf.setFontSize(16);
+  pdf.text("de l'apprenant", 105, 182, { align: "center" });
+
+  pdf.setFontSize(12);
+  pdf.setTextColor(...ACCENT);
+  pdf.text(d.formation_titre || "Formation", 105, 210, { align: "center" });
+  pdf.setFontSize(10);
+  pdf.setTextColor(200, 230, 215);
+  pdf.text(`${d.formation_rncp || ""} — ${d.formation_niveau || ""}`, 105, 220, { align: "center" });
+
+  // Page 2
+  pdf.addPage();
+  let y = 20;
 
   // 1. Présentation
-  children.push(h1("1. Présentation de l'organisme"));
-  children.push(fieldTable([
-    fieldRow("Raison sociale", d.raison_sociale || ""),
-    fieldRow("Forme juridique", d.forme_juridique || ""),
-    fieldRow("Président", d.president || ""),
-    fieldRow("Responsable pédagogique", d.responsable_peda || ""),
-    fieldRow("Adresse", d.adresse || ""),
-    fieldRow("Téléphone", d.telephone || ""),
-    fieldRow("Email", d.email_contact || ""),
-    fieldRow("Site internet", d.site_web || ""),
-    fieldRow("LinkedIn", d.linkedin || ""),
-  ]));
+  y = addH1(pdf, "1. Présentation de l'organisme", y);
+  y = addField(pdf, "Raison sociale", d.raison_sociale || "", y, true);
+  y = addField(pdf, "Forme juridique", d.forme_juridique || "", y);
+  y = addField(pdf, "Président", d.president || "", y, true);
+  y = addField(pdf, "Responsable pédagogique", d.responsable_peda || "", y);
+  y = addField(pdf, "Adresse", d.adresse || "", y, true);
+  y = addField(pdf, "Téléphone", d.telephone || "", y);
+  y = addField(pdf, "Email", d.email_contact || "", y, true);
+  y = addField(pdf, "Site internet", d.site_web || "", y);
+  y = addField(pdf, "LinkedIn", d.linkedin || "", y, true);
 
   // 2. Formation
-  children.push(empty(), h1("2. La formation"));
-  children.push(fieldTable([
-    fieldRow("Intitulé", d.formation_titre || ""),
-    fieldRow("RNCP", d.formation_rncp || ""),
-    fieldRow("Niveau", d.formation_niveau || ""),
-    fieldRow("Certificateur", d.formation_certificateur || ""),
-    fieldRow("Durée totale", d.formation_duree || ""),
-    fieldRow("Heures CFA", d.formation_heures || ""),
-    fieldRow("Rythme d'alternance", d.formation_rythme || ""),
-  ]));
+  y += 4;
+  y = addH1(pdf, "2. La formation", y);
+  y = addField(pdf, "Intitulé", d.formation_titre || "", y, true);
+  y = addField(pdf, "RNCP", d.formation_rncp || "", y);
+  y = addField(pdf, "Niveau", d.formation_niveau || "", y, true);
+  y = addField(pdf, "Certificateur", d.formation_certificateur || "", y);
+  y = addField(pdf, "Durée totale", d.formation_duree || "", y, true);
+  y = addField(pdf, "Heures CFA", d.formation_heures || "", y);
+  y = addField(pdf, "Rythme", d.formation_rythme || "", y, true);
 
   // Blocs de compétences
-  children.push(empty(), h2("Blocs de compétences"));
+  y += 4;
+  y = addBanner(pdf, "Blocs de compétences", y, SECONDARY);
   for (let i = 0; i < 3; i++) {
     const code = d[`bloc_${i}_code`];
     const titre = d[`bloc_${i}_titre`];
     const heures = d[`bloc_${i}_heures`];
     if (code || titre) {
-      children.push(banner(`${code || `BC0${i+1}`} — ${heures || "?"}h`, C.secondary));
-      children.push(para(titre || "", { italic: true }));
+      if (y > 265) { pdf.addPage(); y = 20; }
+      y = addField(pdf, `${code || `BC0${i+1}`} (${heures || "?"}h)`, titre || "", y, i % 2 === 0);
     }
   }
 
   // 3. Infos pratiques
-  children.push(empty(), h1("3. Informations pratiques"));
-  children.push(fieldTable([
-    fieldRow("Horaires du CFA", d.horaires_cfa || ""),
-    fieldRow("Jour de formation", d.jour_cfa || ""),
-    fieldRow("Accès transports", d.acces_transports || ""),
-    fieldRow("Restauration", d.restauration || ""),
-  ]));
+  y += 4;
+  if (y > 240) { pdf.addPage(); y = 20; }
+  y = addH1(pdf, "3. Informations pratiques", y);
+  y = addField(pdf, "Horaires du CFA", d.horaires_cfa || "", y, true);
+  y = addField(pdf, "Jour de formation", d.jour_cfa || "", y);
+  y = addField(pdf, "Accès transports", d.acces_transports || "", y, true);
+  y = addField(pdf, "Restauration", d.restauration || "", y);
 
   // 4. Référent handicap
-  children.push(empty(), h1("4. Référent handicap"));
-  children.push(fieldTable([
-    fieldRow("Nom du référent", d.referent_handicap || ""),
-    fieldRow("Email", d.referent_handicap_email || ""),
-    fieldRow("Téléphone", d.referent_handicap_tel || ""),
-  ]));
+  y += 4;
+  if (y > 250) { pdf.addPage(); y = 20; }
+  y = addH1(pdf, "4. Référent handicap", y);
+  y = addField(pdf, "Nom du référent", d.referent_handicap || "", y, true);
+  y = addField(pdf, "Email", d.referent_handicap_email || "", y);
+  y = addField(pdf, "Téléphone", d.referent_handicap_tel || "", y, true);
 
   // 5. Contacts utiles
-  children.push(empty(), h1("5. Contacts utiles"));
-  children.push(fieldTable([
-    fieldRow("Urgence", d.urgence_tel || "15 (SAMU), 17 (Police), 18 (Pompiers)"),
-    fieldRow("Médecine du travail", d.medecine_travail || ""),
-  ]));
+  y += 4;
+  if (y > 250) { pdf.addPage(); y = 20; }
+  y = addH1(pdf, "5. Contacts utiles", y);
+  y = addField(pdf, "Urgence", d.urgence_tel || "15 (SAMU), 17 (Police), 18 (Pompiers)", y, true);
+  y = addField(pdf, "Médecine du travail", d.medecine_travail || "", y);
 
   // 6. Règlement intérieur
   if (d.reglement) {
-    children.push(pb(), h1("6. Règlement intérieur"));
-    d.reglement.split("\n").forEach((line) => {
-      if (line.trim()) children.push(bullet(line.trim()));
-    });
+    y += 4;
+    if (y > 230) { pdf.addPage(); y = 20; }
+    y = addH1(pdf, "6. Règlement intérieur", y);
+    const lines = d.reglement.split("\n").filter((l) => l.trim());
+    for (const line of lines) {
+      if (y > 275) { pdf.addPage(); y = 20; }
+      y = addPara(pdf, "• " + line.trim(), y);
+    }
   }
 
-  return children;
+  addFooter(pdf, d.raison_sociale || "MyQualio");
+}
+
+// ============ FALLBACK GÉNÉRIQUE ============
+function buildGeneric(pdf: jsPDF, title: string, data: D) {
+  // Couverture simple
+  pdf.setFillColor(...PRIMARY);
+  pdf.rect(0, 0, 210, 60, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(22);
+  pdf.setTextColor(...WHITE);
+  pdf.text(data.raison_sociale || "Organisme de Formation", 105, 25, { align: "center" });
+  pdf.setFontSize(14);
+  pdf.text(title, 105, 40, { align: "center" });
+  pdf.setFontSize(9);
+  pdf.setTextColor(200, 230, 215);
+  pdf.text(`Généré le ${new Date().toLocaleDateString("fr-FR")}`, 105, 52, { align: "center" });
+
+  // Tableau avec tous les champs remplis
+  const rows = Object.entries(data)
+    .filter(([, v]) => v && v.trim())
+    .map(([k, v]) => {
+      const label = k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return [label, v];
+    });
+
+  if (rows.length > 0) {
+    autoTable(pdf, {
+      startY: 70,
+      head: [["Champ", "Valeur"]],
+      body: rows,
+      theme: "grid",
+      headStyles: { fillColor: PRIMARY, textColor: WHITE, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 8, textColor: DARK },
+      alternateRowStyles: { fillColor: LIGHT },
+      margin: { left: 15, right: 15 },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
+    });
+  } else {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...GRAY);
+    pdf.text("Aucune donnée saisie.", 105, 80, { align: "center" });
+  }
+
+  addFooter(pdf, data.raison_sociale || "MyQualio");
 }
 
 // ============ ROUTE ============
@@ -184,91 +250,29 @@ export async function POST(req: Request) {
   try {
     const { docId, docTitle, data } = await req.json() as { docId: string; docTitle: string; data: D };
 
-    let children: (Paragraph | Table)[];
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
     switch (docId) {
       case "livret-accueil":
-        children = buildLivretAccueil(data);
+        buildLivretAccueil(pdf, data);
         break;
       default:
-        // Fallback générique : génère un doc avec tous les champs remplis
-        children = buildGeneric(docTitle, data);
+        buildGeneric(pdf, docTitle, data);
         break;
     }
 
-    const doc = new Document({
-      numbering: {
-        config: [{
-          reference: "bullets",
-          levels: [{ level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }],
-        }],
-      },
-      sections: [{
-        headers: {
-          default: new Header({
-            children: [new Paragraph({
-              children: [
-                new TextRun({ text: `${data.raison_sociale || "MyQualio"} — ${docTitle}`, size: 16, font: "Calibri", color: C.gray }),
-              ],
-            })],
-          }),
-        },
-        footers: {
-          default: new Footer({
-            children: [new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun({ text: "Page ", size: 16, font: "Calibri", color: C.gray }),
-                new TextRun({ children: [PageNumber.CURRENT], size: 16, font: "Calibri", color: C.gray }),
-              ],
-            })],
-          }),
-        },
-        children,
-      }],
-    });
-
-    const buffer = await Packer.toBuffer(doc);
+    const buffer = pdf.output("arraybuffer");
     const uint8 = new Uint8Array(buffer);
-    const filename = `${docId}-${(data.raison_sociale || "document").replace(/\s+/g, "-").toLowerCase()}.docx`;
+    const filename = `${docId}-${(data.raison_sociale || "document").replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
     return new NextResponse(uint8, {
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (err) {
-    console.error("Erreur génération doc:", err);
+    console.error("Erreur génération PDF:", err);
     return NextResponse.json({ error: "Erreur lors de la génération" }, { status: 500 });
   }
-}
-
-// Fallback générique : liste tous les champs remplis dans un tableau
-function buildGeneric(title: string, data: D): (Paragraph | Table)[] {
-  const children: (Paragraph | Table)[] = [];
-
-  children.push(
-    new Paragraph({ spacing: { before: 1000 } }),
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: data.raison_sociale || "Organisme de Formation", bold: true, size: 40, font: "Calibri", color: C.primary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 300 }, children: [new TextRun({ text: title, bold: true, size: 36, font: "Calibri", color: C.secondary })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200 }, children: [new TextRun({ text: `Généré le ${new Date().toLocaleDateString("fr-FR")}`, size: 20, font: "Calibri", color: C.gray })] }),
-    pb(),
-    h1(title),
-  );
-
-  const rows = Object.entries(data)
-    .filter(([, v]) => v && v.trim())
-    .map(([k, v], i) => {
-      const label = k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-      return fieldRow(label, v, i % 2 === 0 ? C.light : undefined);
-    });
-
-  if (rows.length > 0) {
-    children.push(fieldTable(rows));
-  } else {
-    children.push(para("Aucune donnée saisie.", { italic: true, color: C.gray }));
-  }
-
-  return children;
 }
